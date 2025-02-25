@@ -31,30 +31,40 @@ const getAppointmentsById = async(req,res) => {
     }
 }
 
-const createAppointments = async(req,res) => {
-    try{
-        const {doctorId,date,duration,appointmentType,patientName,notes} = req.body;
-        const checkSlots = await appointmentSchema.findOne({doctorId,date});
+const createAppointments = async (req, res) => {
+    try {
+        const { doctorId, date, duration, appointmentType, patientName } = req.body;
 
-        if(checkSlots){
-            res.status(400).json({
-                message:"Slot Already Booked"
-            })
+        console.log("Received Appointment Request:", req.body);
+
+        const requestedDate = new Date(date);
+        console.log("Converted Requested Date:", requestedDate);
+
+        const existing = await appointmentSchema.findOne({ doctorId, date: requestedDate });
+
+        console.log("Checking if slot is already booked:", requestedDate);
+        console.log("Existing Appointment in DB:", existing);
+
+        if (existing) {
+            return res.status(400).json({ message: "Slot Already Booked" });
         }
 
-        const appointment = await appointmentSchema.create({doctorId,date,duration,appointmentType,patientName,notes});
+        const appointment = await appointmentSchema.create({
+            doctorId,
+            date: requestedDate,
+            duration,
+            appointmentType,
+            patientName,
+        });
 
-        res.status(201).json({
-            message:"Appointment Created",
-            data:appointment
-        })
-    }catch(err){
-        res.status(500).json({
-            message:"Internal Server Error",
-            data:err
-        })
+        return res.status(201).json({ message: "Appointment Created", data: appointment });
+    } catch (err) {
+        console.error("Server Error:", err);
+        return res.status(500).json({ message: "Internal Server Error", error: err.message });
     }
-}
+};
+
+
 
 const editAppointments = async(req,res) => {
     try{
